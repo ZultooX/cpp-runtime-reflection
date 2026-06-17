@@ -26,7 +26,7 @@ int main(int argc, char*argv[])
 
 int main(int argc, char*argv[]) 
 { 
-   Execute();
+   Execute(argc, argv);
 } 
 
 #endif

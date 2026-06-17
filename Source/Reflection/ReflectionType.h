@@ -1,88 +1,76 @@
 #pragma once
 
-#include <cstddef>
-
-#include <unordered_map>
-#include <iostream>
-#include <string_view>
-
 struct Property
 {
+    Property(const char* n, unsigned long long s)
+		: name(n), size(s)
+    {
+    }
+
 	const char* name;
-	unsigned long long offset;
 	unsigned long long size;
-};
 
-struct TypeInfoBase
-{
-	virtual const char* GetName() const = 0;
-	virtual const Property* GetProperties() const = 0;
-	virtual size_t GetPropertyCount() const = 0;
+    virtual void* Get(void* object) const = 0;
 
-	virtual ~TypeInfoBase() = default;
-};
-
-template<typename  T>
-struct TypeInfo : TypeInfoBase
-{
-    static constexpr const char* Name = "Unknown";
-    static constexpr Property Properties[] = {};
-    static constexpr size_t PropertyCount = 0;
-
-    const char* GetName() const override
-    {
-        return Name;
-    }
-
-    const Property* GetProperties() const override
-    {
-        return Properties;
-    }
-
-    size_t GetPropertyCount() const override
-    {
-        return PropertyCount;
-    }
-};
+    template<typename T>
+    const T& Get(void* object) const;
 
 
-class TypeRegistry
-{
-public:
-    static void Register(const char* name, TypeInfoBase* info)
-    {
-        GetMap()[std::string(name)] = info;
-    }
+    virtual void Set(void* object, void* value) const = 0;
 
-    static TypeInfoBase* Get(const char* name)
-    {
-        auto& map = GetMap();
-        auto it = map.find(std::string(name));
-        return it != map.end() ? it->second : nullptr;
-    }
-
-private:
-    static std::unordered_map<std::string, TypeInfoBase*>& GetMap()
-    {
-        static std::unordered_map<std::string, TypeInfoBase*>& map =
-            *new std::unordered_map<std::string, TypeInfoBase*>();
-        return map;
-    }
+	template<typename T>
+    void Set(void* object, const T& value) const;
 };
 
 template<typename T>
-struct TypeRegistrar
+inline const T& Property::Get(void* object) const
 {
-    TypeRegistrar()
+    return *reinterpret_cast<T*>(Get(object));
+}
+
+template<typename T>
+inline void Property::Set(void* object, const T& value) const
+{
+    Set(object, (void*)&value);
+}
+
+
+template<typename Class, typename Member>
+struct TypedProperty : Property
+{
+    Member Class::* member;
+
+    TypedProperty(const char* n, unsigned long long s, Member Class::* m)
+        : Property(n, s), member(m)
     {
-        static T info;
-        TypeRegistry::Register(T::Name, &info);
     }
+
+    void* Get(void* object) const override
+    {
+        auto* obj = static_cast<Class*>(object);
+        return &(obj->*member);
+    }
+
+	void Set(void* object, void* value) const override
+	{
+		auto* obj = static_cast<Class*>(object);
+		auto* val = static_cast<Member*>(value);
+		obj->*member = *val;
+	}
 };
 
-#define NAME(name) static constexpr const char* Name = #name;
-#define PROPERTY_COUNT static constexpr size_t PropertyCount = sizeof(Properties) / sizeof(Properties[0]);
-#define GETTER_METHODS \
-	inline const char* GetName() const override { return Name; }                \
-inline const Property* GetProperties() const override { return Properties; }    \
-inline size_t GetPropertyCount() const override { return PropertyCount; }
+
+
+
+
+
+struct ClassInfoBase
+{
+	virtual const char* GetName() const = 0;
+	virtual const Property* const* GetProperties() const = 0;
+	virtual unsigned long long GetPropertyCount() const = 0;
+
+    const Property* GetProperty(const char* propertyName) const;
+
+	virtual ~ClassInfoBase() = default;
+};

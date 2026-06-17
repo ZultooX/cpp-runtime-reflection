@@ -1,19 +1,22 @@
-
-#include "Player.h"
-
-#include "Reflection/ReflectionType.h"
+#include "C:/Users/zulto/Desktop/MyFiles/Projects/cpp-runtime-reflection/Source/Player.h"
+#include "C:/Users/zulto/Desktop/MyFiles/Projects/cpp-runtime-reflection/Source/Reflection/ReflectionCommon.hpp"
 
 template<>
-struct TypeInfo<SimonsMamma> : TypeInfoBase
+struct TypeInfo<SimonsMamma> : ClassInfoBase
 {
-	static constexpr Property Properties[] =
-	{
-		{ "thisShouldWork", offsetof(SimonsMamma, thisShouldWork), sizeof(int)},
-		{ "test", offsetof(SimonsMamma, test), sizeof(int)}
-	};
+	TYPE(SimonsMamma);
 
 	NAME(SimonsMamma);
-	PROPERTY_COUNT;
+
+	PROPERTY(thisShouldWork);
+	PROPERTY(test);
+
+	PROPERTY_LIST(
+		&thisShouldWork,
+		&test
+	);
+
+	static constexpr const unsigned long long PropertyCount = 2;
 	GETTER_METHODS;
 };
 

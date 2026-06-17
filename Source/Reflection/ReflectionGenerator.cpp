@@ -31,19 +31,41 @@ void ReflectionGenerator::GenerateReflectionClass(const std::string& name, const
 		stream << "using namespace " << cls._namespace << ";"  "\n\n";
 	}
 
-	stream << "struct Variable {int offset; int size; };""\n";
+	stream << "#include \"" << cls.filepath << "\"\n";
+	stream << "#include \"" << (std::filesystem::path(__FILE__).parent_path() / "ReflectionCommon.hpp").generic_string() << "\"\n";
 
-	stream << "struct Generated_" << name << "\n";
+	stream << "\n";
+
+	stream << "template<>\n";
+	stream << "struct TypeInfo<" << name << "> : ClassInfoBase\n";
 	stream << "{\n";
-	stream << "    static constexpr const char* ClassName = \"" << name << "\";"  "\n";
-	stream << "    static const std::unorderded_map<std::string, Variable> variables ="  "\n";
-	stream << "    {""\n";
-	for (auto& var : cls.variables)
+	stream << "	TYPE(" << name << ");\n\n";
+	stream << "	NAME(" << name << ");\n\n";
+
+	for (const VariableInfo& var : cls.variables)
 	{
-		stream << "        { offsetof(" << name << ", " << var.name << "), sizeof(" << var.type << ") }"  "\n";
+		stream << "	PROPERTY(" << var.name << ");\n";
 	}
-	stream << "    };""\n";
-	stream << "};""\n";
+
+	stream << "\n";
+
+	stream << "	PROPERTY_LIST(\n";
+	for (size_t i = 0; i < cls.variables.size(); i++)
+	{
+		const VariableInfo& var = cls.variables[i];
+		stream << "		&" << var.name;
+
+		if (i != cls.variables.size() - 1)
+			stream << ",";
+
+		stream << "\n";
+	}
+	stream << "	);\n\n";
+
+	stream << "	static constexpr const unsigned long long PropertyCount = " << cls.variables.size() <<  ";\n";
+	stream << "	GETTER_METHODS;\n";
+	stream << "};\n\n";
+	stream << "static TypeRegistrar<TypeInfo<" << name << ">> " << name << "_registrar{};\n";
 
 	std::ofstream out(name + ".generated.cpp");
 	out << stream.str();
