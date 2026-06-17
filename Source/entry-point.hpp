@@ -5,11 +5,18 @@
 
 #ifdef TESTING_SUITE_CLEAN
 
-#include "SourceTokenizer.h"
+#include "Reflection/Lexer.h"
+#include "Reflection/ReflectionGenerator.h"
+
 #include <regex>
 inline void Execute()
 {
-	Lexer::Tokenize("C:/MyFiles/Projects/cpp-runtime-reflection/Source/Player.h");
+	Lexer lexer;
+	lexer.Tokenize("C:/MyFiles/Projects/cpp-runtime-reflection/Source/Player.h");
+	auto& o = lexer.GetClasses();
+
+	ReflectionGenerator gen;
+	gen.Generate(o);
 }
 
 #endif
